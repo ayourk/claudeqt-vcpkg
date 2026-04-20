@@ -13,6 +13,15 @@ vcpkg_from_git(
     HEAD_REF master
 )
 
+# ClaudeQt uses the C++ library and syntax-definition XMLs but not the
+# KDE .po/.qm translations. ecm_install_po_files_as_qm() pulls in
+# Qt6LinguistTools (from qttools) — a heavy dependency we don't need.
+# Patch it out rather than adding qttools to the dep tree.
+vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt"
+    "ecm_install_po_files_as_qm(poqm)"
+    "# ecm_install_po_files_as_qm(poqm)  # patched out by vcpkg port"
+)
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS

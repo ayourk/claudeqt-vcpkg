@@ -1,0 +1,14 @@
+{
+  "$comment": "CI-only manifest — pins Qt to 6.4.2 for parity with the main ClaudeQt repo. Overlay ports supply ECM + KSH from the checked-out registry source.",
+  "name": "claudeqt-vcpkg-ci",
+  "version": "0.0.1",
+  "dependencies": [
+    "extra-cmake-modules",
+    "kf5-syntax-highlighting"
+  ],
+  "overrides": [
+    { "name": "qtbase",  "version": "6.4.2" },
+    { "name": "qtsvg",   "version": "6.4.2" },
+    { "name": "qttools", "version": "6.4.2", "port-version": 2 }
+  ]
+}

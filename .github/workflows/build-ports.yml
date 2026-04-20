@@ -4,16 +4,18 @@
 # portfiles before anyone tries to use them from the main ClaudeQt
 # repo.
 #
-# Uses vcpkg overlay-ports mode (--overlay-ports) rather than the
-# git-registry mechanism — the registry's versions/*.json git-tree
-# hashes describe the commit we're testing *this run*, so the
-# registry view of itself is circular. Overlay ports read the files
-# directly from the checked-out source tree.
+# Uses a CI-only manifest (ci/vcpkg.json) to pin Qt at 6.4.2 for
+# parity with the main repo, combined with --overlay-ports so our
+# ports are read directly from the checked-out source tree rather
+# than through the git-registry mechanism (whose versions/*.json
+# git-tree hashes describe *this* commit — circular).
 #
-# Triplet is x64-windows (shared) per the upstream vcpkg convention
-# for port validation. Static triplets (e.g. x64-windows-static-md)
-# are exercised downstream in the main claudeqt repo's release
-# workflow.
+# Triplet is x64-windows-static-release (custom, under ci/triplets):
+# static linkage so build-time tools (katehighlightingindexer) don't
+# crash from missing DLLs, and release-only so the debug build
+# doesn't exhaust the runner's ~14 GB disk. The main claudeqt repo
+# uses x64-windows-static-md (custom); this is close enough for
+# port validation.
 
 name: Build Ports
 
@@ -22,23 +24,24 @@ on:
     branches: [main]
     paths:
       - 'ports/**'
+      - 'ci/**'
       - '.github/workflows/build-ports.yml'
   pull_request:
     branches: [main]
     paths:
       - 'ports/**'
+      - 'ci/**'
       - '.github/workflows/build-ports.yml'
   workflow_dispatch:
 
 jobs:
   build-windows:
-    name: "Build: ${{ matrix.port }} (${{ matrix.triplet }})"
+    name: "Build all ports (${{ matrix.triplet }})"
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        port: [extra-cmake-modules, kf5-syntax-highlighting]
-        triplet: [x64-windows]
+        triplet: [x64-windows-static-release]
 
     env:
       VCPKG_ROOT: C:\vcpkg
@@ -54,26 +57,15 @@ jobs:
           git clone --depth 1 https://github.com/microsoft/vcpkg.git %VCPKG_ROOT%
           call %VCPKG_ROOT%\bootstrap-vcpkg.bat -disableMetrics
 
-      - name: Build port
+      - name: Build all ports
         shell: cmd
         run: >
-          %VCPKG_ROOT%\vcpkg install ${{ matrix.port }}:${{ matrix.triplet }}
+          %VCPKG_ROOT%\vcpkg install
           --overlay-ports="%GITHUB_WORKSPACE%\ports"
+          --overlay-triplets="%GITHUB_WORKSPACE%\ci\triplets"
+          --x-manifest-root="%GITHUB_WORKSPACE%\ci"
+          --triplet=${{ matrix.triplet }}
 
       - name: Verify install
         shell: cmd
         run: "%VCPKG_ROOT%\\vcpkg list"
-
-  build-summary:
-    name: All ports
-    runs-on: ubuntu-latest
-    needs: build-windows
-    if: always()
-    steps:
-      - name: Check results
-        run: |
-          if [ "${{ needs.build-windows.result }}" != "success" ]; then
-            echo "::error::One or more ports failed to build"
-            exit 1
-          fi
-          echo "All ports built successfully"

@@ -6,7 +6,7 @@
     },
     "kf5-syntax-highlighting": {
       "baseline": "5.115.0",
-      "port-version": 0
+      "port-version": 1
     }
   }
 }
