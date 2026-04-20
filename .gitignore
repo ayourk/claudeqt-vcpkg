@@ -1,0 +1,14 @@
+# vcpkg work dirs — if someone accidentally runs `vcpkg install` from
+# within this registry tree (rather than against VCPKG_ROOT) these
+# materialize here and can eat gigabytes. Ignore defensively.
+buildtrees/
+downloads/
+installed/
+packages/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
