@@ -1,7 +1,7 @@
 {
-  "$comment": "Baseline matches the main ClaudeQt repo's pin (2026.02.27).",
+  "$comment": "Baseline commit e0edebd1 = tag 2026.02.27, matching the main ClaudeQt repo.",
   "default-registry": {
     "kind": "builtin",
-    "baseline": "2026.02.27"
+    "baseline": "e0edebd1dc2d03cf7d02349df91de74ef4d0c00e"
   }
 }

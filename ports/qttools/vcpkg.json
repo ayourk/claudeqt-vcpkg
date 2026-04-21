@@ -1,0 +1,99 @@
+{
+  "name": "qttools",
+  "version": "6.4.2",
+  "port-version": 3,
+  "description": "Qt Tools (ClaudeQt overlay — litehtml decoupled from base install)",
+  "homepage": "https://www.qt.io/",
+  "license": null,
+  "dependencies": [
+    {
+      "name": "qtbase",
+      "default-features": false
+    },
+    {
+      "name": "qttools",
+      "host": true,
+      "default-features": false,
+      "features": [
+        "linguist"
+      ]
+    }
+  ],
+  "features": {
+    "assistant": {
+      "description": "Build Qt Assistant (requires litehtml)",
+      "dependencies": [
+        "litehtml",
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "network",
+            "png",
+            "sql-sqlite",
+            "widgets"
+          ]
+        }
+      ]
+    },
+    "designer": {
+      "description": "Build Qt Designer",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "network"
+          ]
+        }
+      ]
+    },
+    "linguist": {
+      "description": "Build Qt Linguist components",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "widgets"
+          ]
+        }
+      ]
+    },
+    "qdbus": {
+      "description": "Build qdbusviewer",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "dbus",
+            "widgets"
+          ]
+        }
+      ]
+    },
+    "qdoc": {
+      "description": "Build QDoc.",
+      "dependencies": [
+        "llvm"
+      ]
+    },
+    "qml": {
+      "description": "Build QML imports",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "gui"
+          ]
+        },
+        {
+          "name": "qtdeclarative",
+          "default-features": false
+        }
+      ]
+    }
+  }
+}

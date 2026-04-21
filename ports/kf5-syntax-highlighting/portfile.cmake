@@ -22,13 +22,43 @@ vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt"
     "# ecm_install_po_files_as_qm(poqm)  # patched out by vcpkg port"
 )
 
+# KSH unconditionally requires Qt6::Test in its find_package even
+# though it's only used by the test suite. With BUILD_TESTING=OFF
+# the component is unused — remove it to avoid pulling in testlib.
+vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt"
+    "REQUIRED COMPONENTS Core Network Test"
+    "REQUIRED COMPONENTS Core Network"
+)
+
+vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
+    FEATURES
+    "gui" KSYNTAXHIGHLIGHTING_USE_GUI
+    "qrc" QRC_SYNTAX
+    INVERTED_FEATURES
+    "gui" _KSH_NO_GUI
+    "qrc" _KSH_NO_QRC
+)
+
+if(_KSH_NO_GUI)
+    set(KSH_GUI_OPT -DKSYNTAXHIGHLIGHTING_USE_GUI=OFF)
+else()
+    set(KSH_GUI_OPT -DKSYNTAXHIGHLIGHTING_USE_GUI=ON)
+endif()
+
+if(_KSH_NO_QRC)
+    set(KSH_QRC_OPT -DQRC_SYNTAX=OFF)
+else()
+    set(KSH_QRC_OPT -DQRC_SYNTAX=ON)
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -DBUILD_TESTING=OFF
         -DBUILD_QCH=OFF
         -DBUILD_WITH_QT6=ON
-        -DKSYNTAXHIGHLIGHTING_USE_GUI=ON
+        ${KSH_GUI_OPT}
+        ${KSH_QRC_OPT}
 )
 
 vcpkg_cmake_install()

@@ -12,10 +12,10 @@
 #
 # Triplet is x64-windows-static-release (custom, under ci/triplets):
 # static linkage so build-time tools (katehighlightingindexer) don't
-# crash from missing DLLs, and release-only so the debug build
-# doesn't exhaust the runner's ~14 GB disk. The main claudeqt repo
-# uses x64-windows-static-md (custom); this is close enough for
-# port validation.
+# crash from missing DLLs, and release-only to reduce disk pressure.
+# A cleanup step reclaims ~10 GB from pre-installed tools the build
+# doesn't need. The main claudeqt repo uses x64-windows-static-md
+# (custom); this is close enough for port validation.
 
 name: Build Ports
 
@@ -49,12 +49,47 @@ jobs:
 
     steps:
       - name: Checkout registry
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Free disk space
+        shell: pwsh
+        run: |
+          # windows-latest has ~30 GB total but only ~14 GB free.
+          # Remove pre-installed tools we don't need to reclaim ~10 GB.
+          $before = (Get-PSDrive C).Free / 1GB
+          $dirs = @(
+            "C:\Android",
+            "C:\SeleniumWebDrivers",
+            "C:\imagemagick",
+            "C:\Modules\az_*",
+            "C:\Program Files\dotnet\sdk",
+            "C:\Program Files\dotnet\shared",
+            "C:\Program Files\MongoDB",
+            "C:\Program Files\MySQL",
+            "C:\Program Files\PostgreSQL",
+            "C:\hostedtoolcache\CodeQL",
+            "C:\hostedtoolcache\Java*",
+            "C:\hostedtoolcache\PyPy",
+            "C:\hostedtoolcache\Ruby",
+            "C:\hostedtoolcache\go",
+            "C:\hostedtoolcache\node"
+          )
+          foreach ($d in $dirs) {
+            if (Test-Path $d) {
+              Remove-Item -Recurse -Force $d -ErrorAction SilentlyContinue
+            }
+          }
+          # Remove pre-installed vcpkg and its packages
+          if (Test-Path C:\vcpkg) {
+            Remove-Item -Recurse -Force C:\vcpkg -ErrorAction SilentlyContinue
+          }
+          $after = (Get-PSDrive C).Free / 1GB
+          Write-Host ("Freed {0:N1} GB ({1:N1} -> {2:N1} GB free)" -f ($after - $before), $before, $after)
 
       - name: Bootstrap vcpkg
         shell: cmd
         run: |
-          git clone --depth 1 https://github.com/microsoft/vcpkg.git %VCPKG_ROOT%
+          git clone https://github.com/microsoft/vcpkg.git %VCPKG_ROOT%
           call %VCPKG_ROOT%\bootstrap-vcpkg.bat -disableMetrics
 
       - name: Build all ports
