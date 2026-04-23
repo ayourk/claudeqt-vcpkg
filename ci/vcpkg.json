@@ -2,18 +2,13 @@
   "$comment": "CI-only manifest — pins Qt to 6.4.2 for parity with the main ClaudeQt repo. Overlay ports supply ECM, KSH, and qttools from the checked-out registry source.",
   "name": "claudeqt-vcpkg-ci",
   "version": "0.0.1",
+  "$deps-note": "qttools is validated downstream in the main ClaudeQt CI, not here. The host triplet DLL issue (moc.exe STATUS_DLL_NOT_FOUND) makes it impractical to test in a shared-host-triplet CI environment.",
   "dependencies": [
     "extra-cmake-modules",
-    "kf5-syntax-highlighting",
-    {
-      "name": "qttools",
-      "default-features": false,
-      "features": ["linguist"]
-    }
+    "kf5-syntax-highlighting"
   ],
   "overrides": [
-    { "name": "qtbase",  "version": "6.4.2" },
-    { "name": "qtsvg",   "version": "6.4.2" },
-    { "name": "qttools", "version": "6.4.2", "port-version": 3 }
+    { "name": "qtbase",  "version": "6.4.2", "port-version": 25 },
+    { "name": "qtsvg",   "version": "6.4.2" }
   ]
 }

@@ -1,12 +1,24 @@
-set(SCRIPT_PATH "${CURRENT_INSTALLED_DIR}/share/qtbase")
-include("${SCRIPT_PATH}/qt_install_submodule.cmake")
+# qttools 6.4.2 for ClaudeQt — direct build without qt_install_submodule.
+#
+# The builtin vcpkg qtbase port ships qt_install_submodule.cmake, but
+# hobbycad-vcpkg's custom qtbase port does not. This portfile uses
+# vcpkg_from_git + vcpkg_cmake_configure directly.
+
+set(QT_VERSION 6.4.2)
 
 # Only apply the litehtml devendoring patch when building Assistant.
 if("assistant" IN_LIST FEATURES)
-    set(${PORT}_PATCHES devendor-litehtml.patch)
+    set(PATCHES devendor-litehtml.patch)
 else()
-    set(${PORT}_PATCHES "")
+    set(PATCHES "")
 endif()
+
+vcpkg_from_git(
+    OUT_SOURCE_PATH SOURCE_PATH
+    URL https://code.qt.io/qt/qttools.git
+    REF 2ddbe1df490a4f9a7963a3dc78a8d865165cbf5b
+    PATCHES ${PATCHES}
+)
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
     FEATURES
@@ -27,20 +39,34 @@ vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
     "qml"    CMAKE_DISABLE_FIND_PACKAGE_Qt6QuickWidgets
     )
 
-set(TOOL_NAMES
-    lconvert
-    lprodump
-    lrelease-pro
-    lrelease
-    lupdate-pro
-    lupdate
-    qtattributionsscanner
-    qtdiag
-    qtdiag6
-    qtpaths
-    qtplugininfo
+set(EXTRA_CONFIGURE_OPTIONS "")
+if(NOT "assistant" IN_LIST FEATURES)
+    list(APPEND EXTRA_CONFIGURE_OPTIONS -DCMAKE_DISABLE_FIND_PACKAGE_litehtml=ON)
+endif()
+
+vcpkg_find_acquire_program(PERL)
+get_filename_component(PERL_PATH ${PERL} DIRECTORY)
+vcpkg_add_to_path(${PERL_PATH})
+
+vcpkg_cmake_configure(
+    SOURCE_PATH "${SOURCE_PATH}"
+    OPTIONS
+        -DQT_BUILD_EXAMPLES=OFF
+        -DQT_BUILD_TESTS=OFF
+        -DHOST_PERL=${PERL}
+        -DCMAKE_DISABLE_FIND_PACKAGE_Qt6AxContainer=ON
+        ${FEATURE_OPTIONS}
+        ${EXTRA_CONFIGURE_OPTIONS}
 )
 
+vcpkg_cmake_install()
+
+# Relocate tools to the standard vcpkg tools directory.
+# Only list tools that are unconditionally built or gated behind
+# features we've selected. Feature-gated tools are appended below.
+set(TOOL_NAMES
+    lconvert lrelease lupdate
+)
 if("assistant" IN_LIST FEATURES)
     list(APPEND TOOL_NAMES assistant qcollectiongenerator qhelpgenerator)
 endif()
@@ -62,22 +88,7 @@ elseif(VCPKG_TARGET_IS_OSX)
     list(APPEND TOOL_NAMES macdeployqt)
 endif()
 
-# When assistant is disabled, prevent CMake from finding litehtml
-# so the qlitehtml subdirectory is skipped entirely.
-set(EXTRA_CONFIGURE_OPTIONS "")
-if(NOT "assistant" IN_LIST FEATURES)
-    list(APPEND EXTRA_CONFIGURE_OPTIONS -DCMAKE_DISABLE_FIND_PACKAGE_litehtml=ON)
-endif()
-
-qt_install_submodule(PATCHES    ${${PORT}_PATCHES}
-                     TOOL_NAMES ${TOOL_NAMES}
-                     CONFIGURE_OPTIONS
-                           ${FEATURE_OPTIONS}
-                           ${EXTRA_CONFIGURE_OPTIONS}
-                           -DCMAKE_DISABLE_FIND_PACKAGE_Qt6AxContainer=ON
-                     CONFIGURE_OPTIONS_RELEASE
-                     CONFIGURE_OPTIONS_DEBUG
-                    )
+vcpkg_copy_tools(TOOL_NAMES ${TOOL_NAMES} AUTO_CLEAN)
 
 if(VCPKG_TARGET_IS_OSX)
     set(OSX_APP_FOLDERS)
@@ -91,17 +102,19 @@ if(VCPKG_TARGET_IS_OSX)
         list(APPEND OSX_APP_FOLDERS qdbusviewer.app)
     endif()
     foreach(_appfolder IN LISTS OSX_APP_FOLDERS)
-        message(STATUS "Moving: ${_appfolder}")
-        file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin/${_appfolder}")
-        file(RENAME "${CURRENT_PACKAGES_DIR}/bin/${_appfolder}/" "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin/${_appfolder}/")
+        if(EXISTS "${CURRENT_PACKAGES_DIR}/bin/${_appfolder}")
+            file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin/${_appfolder}")
+            file(RENAME "${CURRENT_PACKAGES_DIR}/bin/${_appfolder}/" "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin/${_appfolder}/")
+        endif()
     endforeach()
-    if(OSX_APP_FOLDERS)
-        file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
-    endif()
 endif()
 
-file(GLOB_RECURSE debug_dir "${CURRENT_PACKAGES_DIR}/debug/*")
-list(LENGTH debug_dir debug_dir_elements)
-if(debug_dir_elements EQUAL 0)
-    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug")
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
+if(EXISTS "${CURRENT_PACKAGES_DIR}/debug/bin")
+    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
+if(EXISTS "${CURRENT_PACKAGES_DIR}/debug/lib/cmake")
+    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/lib/cmake")
+endif()
+
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSES/GPL-3.0-only.txt")

@@ -1,14 +1,17 @@
 {
   "name": "qttools",
   "version": "6.4.2",
-  "port-version": 3,
+  "port-version": 4,
   "description": "Qt Tools (ClaudeQt overlay — litehtml decoupled from base install)",
   "homepage": "https://www.qt.io/",
   "license": null,
   "dependencies": [
+    { "name": "vcpkg-cmake", "host": true },
+    { "name": "vcpkg-cmake-config", "host": true },
     {
       "name": "qtbase",
-      "default-features": false
+      "default-features": false,
+      "features": ["network", "thread"]
     },
     {
       "name": "qttools",
@@ -55,7 +58,8 @@
           "name": "qtbase",
           "default-features": false,
           "features": [
-            "widgets"
+            "widgets",
+            "printsupport"
           ]
         }
       ]

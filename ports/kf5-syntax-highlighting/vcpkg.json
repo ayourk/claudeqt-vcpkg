@@ -1,7 +1,7 @@
 {
   "name": "kf5-syntax-highlighting",
   "version": "5.115.0",
-  "port-version": 2,
+  "port-version": 3,
   "description": "KDE Frameworks syntax highlighting engine (Qt6 backport mode)",
   "homepage": "https://api.kde.org/frameworks/syntax-highlighting/",
   "license": null,

@@ -1,7 +1,15 @@
 {
-  "$comment": "Baseline commit e0edebd1 = tag 2026.02.27, matching the main ClaudeQt repo.",
+  "$comment": "Baseline commit e0edebd1 = tag 2026.02.27. hobbycad-vcpkg supplies qtbase (feature-gated).",
   "default-registry": {
     "kind": "builtin",
     "baseline": "e0edebd1dc2d03cf7d02349df91de74ef4d0c00e"
-  }
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/ayourk/hobbycad-vcpkg",
+      "baseline": "15e32566365132529c14758dc1adaf5dbb4cf6ef",
+      "packages": ["qtbase"]
+    }
+  ]
 }

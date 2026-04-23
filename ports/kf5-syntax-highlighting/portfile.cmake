@@ -30,6 +30,7 @@ vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt"
     "REQUIRED COMPONENTS Core Network"
 )
 
+
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
     FEATURES
     "gui" KSYNTAXHIGHLIGHTING_USE_GUI
@@ -51,12 +52,22 @@ else()
     set(KSH_QRC_OPT -DQRC_SYNTAX=ON)
 endif()
 
+# On macOS static builds, executables linking Qt GUI need the OpenGL
+# framework because libqcocoa.a uses OpenGL functions. The framework
+# link doesn't propagate through Qt's static CMake config, so we
+# inject it via CMAKE_EXE_LINKER_FLAGS.
+set(KSH_EXTRA_OPTIONS "")
+if(VCPKG_TARGET_IS_OSX)
+    list(APPEND KSH_EXTRA_OPTIONS "-DCMAKE_EXE_LINKER_FLAGS=-framework OpenGL")
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -DBUILD_TESTING=OFF
         -DBUILD_QCH=OFF
         -DBUILD_WITH_QT6=ON
+        ${KSH_EXTRA_OPTIONS}
         ${KSH_GUI_OPT}
         ${KSH_QRC_OPT}
 )

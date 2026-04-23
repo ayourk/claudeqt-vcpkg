@@ -6,11 +6,11 @@
     },
     "kf5-syntax-highlighting": {
       "baseline": "5.115.0",
-      "port-version": 2
+      "port-version": 3
     },
     "qttools": {
       "baseline": "6.4.2",
-      "port-version": 3
+      "port-version": 4
     }
   }
 }
