@@ -1,7 +1,7 @@
 {
   "name": "qttools",
   "version": "6.4.2",
-  "port-version": 4,
+  "port-version": 8,
   "description": "Qt Tools (ClaudeQt overlay — litehtml decoupled from base install)",
   "homepage": "https://www.qt.io/",
   "license": null,

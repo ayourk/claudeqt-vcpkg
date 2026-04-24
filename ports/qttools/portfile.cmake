@@ -61,11 +61,22 @@ vcpkg_cmake_configure(
 
 vcpkg_cmake_install()
 
+# Move libexec tools into bin/ so vcpkg_copy_tools can find them.
+if(EXISTS "${CURRENT_PACKAGES_DIR}/libexec")
+    file(GLOB _libexec_tools "${CURRENT_PACKAGES_DIR}/libexec/*")
+    foreach(_tool IN LISTS _libexec_tools)
+        get_filename_component(_name "${_tool}" NAME)
+        file(RENAME "${_tool}" "${CURRENT_PACKAGES_DIR}/bin/${_name}")
+    endforeach()
+    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/libexec")
+endif()
+if(EXISTS "${CURRENT_PACKAGES_DIR}/debug/libexec")
+    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/libexec")
+endif()
+
 # Relocate tools to the standard vcpkg tools directory.
-# Only list tools that are unconditionally built or gated behind
-# features we've selected. Feature-gated tools are appended below.
 set(TOOL_NAMES
-    lconvert lrelease lupdate
+    lconvert lprodump lrelease lrelease-pro lupdate lupdate-pro
 )
 if("assistant" IN_LIST FEATURES)
     list(APPEND TOOL_NAMES assistant qcollectiongenerator qhelpgenerator)
@@ -82,13 +93,20 @@ endif()
 if("qdoc" IN_LIST FEATURES)
     list(APPEND TOOL_NAMES qdoc)
 endif()
-if(VCPKG_TARGET_IS_WINDOWS)
-    list(APPEND TOOL_NAMES windeployqt)
-elseif(VCPKG_TARGET_IS_OSX)
-    list(APPEND TOOL_NAMES macdeployqt)
-endif()
-
 vcpkg_copy_tools(TOOL_NAMES ${TOOL_NAMES} AUTO_CLEAN)
+
+# vcpkg_copy_tools moved executables from bin/ to tools/qttools/.
+# Patch the installed CMake targets files so downstream find_package()
+# resolves the relocated paths instead of the now-empty bin/.
+file(GLOB_RECURSE _targets_files
+    "${CURRENT_PACKAGES_DIR}/lib/cmake/Qt6*/Qt6*Targets*.cmake"
+    "${CURRENT_PACKAGES_DIR}/share/Qt6*/Qt6*Targets*.cmake"
+)
+foreach(_f IN LISTS _targets_files)
+    vcpkg_replace_string("${_f}" "{_IMPORT_PREFIX}/bin/" "{_IMPORT_PREFIX}/tools/${PORT}/" IGNORE_UNCHANGED)
+    vcpkg_replace_string("${_f}" "{_IMPORT_PREFIX}/./bin/" "{_IMPORT_PREFIX}/tools/${PORT}/" IGNORE_UNCHANGED)
+    vcpkg_replace_string("${_f}" "{_IMPORT_PREFIX}/./libexec/" "{_IMPORT_PREFIX}/tools/${PORT}/" IGNORE_UNCHANGED)
+endforeach()
 
 if(VCPKG_TARGET_IS_OSX)
     set(OSX_APP_FOLDERS)
